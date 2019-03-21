@@ -124,7 +124,7 @@ describe('./lib/lambda/taskResult.js', () => {
         ]
         expected = {
           errors: 1,
-          errorMessage: `sampling test failure: 1/2 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
+          errorMessage: `sampling test failures: 1/2 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
           reports,
         }
         result = taskResult.impl.analyzeSamples({}, reports)
@@ -148,7 +148,7 @@ describe('./lib/lambda/taskResult.js', () => {
           errorMessage: `sampling test failures: 2/2 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
           reports,
         }
-        result = taskResult.impl.analyzeSamples({}, reports)
+        result = taskResult.impl.analyzeSamples({}, reports, def.sampling.DefaultErrorBudget)
         expect(result).to.eql(expected)
       })
     })
@@ -157,13 +157,13 @@ describe('./lib/lambda/taskResult.js', () => {
         const reports = [
           {
             errors: {
-              404: def.sampling.DefaultErrorBudget + 1,
+              404: def.acceptance.DefaultErrorBudget + 1,
             },
           },
         ]
         expected = {
           errors: 1,
-          errorMessage: `acceptance test failure: 1/1 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
+          errorMessage: `acceptance test failures: 1/1 exceeded budget of ${def.acceptance.DefaultErrorBudget} errors`,
           reports,
         }
         result = taskResult.impl.analyzeAcceptance({ mode: def.modes.ACC }, reports)
@@ -193,14 +193,15 @@ describe('./lib/lambda/taskResult.js', () => {
         ]
         expected = {
           errors: 1,
-          errorMessage: `monitoring test failure: 1/1 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
+          errorMessage: `monitoring test failures: 1/1 exceeded budget of ${def.monitoring.DefaultErrorBudget} errors`,
           reports,
         }
-        return taskResult.impl.analyzeMonitoring(
+        const result = taskResult.impl.analyzeMonitoring(
           { mode: def.modes.MON },
           { alert: { send: () => Promise.resolve() } },
           reports // eslint-disable-line comma-dangle
-        ).should.become(expected)
+        )
+        return expect(result).to.become(expected)
       })
     })
     describe('#analyzePerformance', () => {
