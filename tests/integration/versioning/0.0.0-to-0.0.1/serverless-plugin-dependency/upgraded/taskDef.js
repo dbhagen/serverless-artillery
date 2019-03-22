@@ -43,7 +43,7 @@ class TaskError extends Error {
 }
 
 const impl = {
-  defaultsToSettings: defaults => ({
+  defaultSettings: defaults => ({
     size: defaults.DefaultSize,
     averagePause: defaults.DefaultAveragePause,
     pauseVariance: defaults.DefaultPauseVariance,
@@ -69,11 +69,11 @@ const impl = {
     const settings = {}
     // Sampling Settings
     if (constants.isAcceptanceScript(event)) {
-      settings.sampling = impl.defaultsToSettings(constants.acceptance)
+      settings.sampling = impl.defaultSettings(constants.acceptance)
     } else if (constants.isMonitoringScript(event)) {
-      settings.sampling = impl.defaultsToSettings(constants.monitoring)
+      settings.sampling = impl.defaultSettings(constants.monitoring)
     } else {
-      settings.sampling = impl.defaultsToSettings(constants.sampling)
+      settings.sampling = impl.defaultSettings(constants.sampling)
     }
     if (event && event.sampling) {
       if ('size' in event.sampling) {
@@ -99,4 +99,4 @@ const impl = {
 module.exports = constants
 module.exports.TaskError = TaskError
 module.exports.getSettings = impl.getSettings
-module.exports.defaultsToSettings = impl.defaultsToSettings
+module.exports.defaultSettings = impl.defaultSettings

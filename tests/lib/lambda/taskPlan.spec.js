@@ -21,7 +21,7 @@ let expected
 let defaultSettings
 
 const runOnceSettings = func.def.getSettings()
-runOnceSettings.task = { sampling: task.def.defaultsToSettings(task.def.acceptance) }
+runOnceSettings.task = { sampling: task.def.defaultSettings(task.def.acceptance) }
 
 const validScript = () => ({
   config: {

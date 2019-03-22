@@ -12,7 +12,7 @@ const getDefaultSettings = () => {
   const ret = func.def.getSettings()
   ret.alert = () => Promise.resolve()
   ret.task = {
-    sampling: task.def.defaultsToSettings(task.def.sampling),
+    sampling: task.def.defaultSettings(task.def.sampling),
   }
   return ret
 }
@@ -58,15 +58,15 @@ describe('./lib/lambda/taskValid.js', () => {
         })
         describe(': known defaults', () => {
           it('accepts acceptance defaults', () => {
-            settings.task.sampling = task.def.defaultsToSettings(task.def.acceptance)
+            settings.task.sampling = task.def.defaultSettings(task.def.acceptance)
             task.valid(settings, script)
           })
           it('accepts monitoring defaults', () => {
-            settings.task.sampling = task.def.defaultsToSettings(task.def.monitoring)
+            settings.task.sampling = task.def.defaultSettings(task.def.monitoring)
             task.valid(settings, script)
           })
           it('accepts sampling defaults', () => {
-            settings.task.sampling = task.def.defaultsToSettings(task.def.sampling)
+            settings.task.sampling = task.def.defaultSettings(task.def.sampling)
             task.valid(settings, script)
           })
         })

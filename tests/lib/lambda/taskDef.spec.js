@@ -26,7 +26,7 @@ describe('./lib/lambda/taskDef.js', () => {
   })
   describe(':impl', () => {
     describe('#getSettings', () => {
-      const makeSettings = defaults => ({ sampling: task.def.defaultsToSettings(defaults) })
+      const makeSettings = defaults => ({ sampling: task.def.defaultSettings(defaults) })
       const samplingSettings = makeSettings(task.def.sampling)
       const acceptanceSettings = makeSettings(task.def.acceptance)
       const monitoringSettings = makeSettings(task.def.monitoring)
