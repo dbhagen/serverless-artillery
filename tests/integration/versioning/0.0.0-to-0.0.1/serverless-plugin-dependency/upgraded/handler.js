@@ -34,7 +34,7 @@ const impl = {
         if (event._trace) {
           console.log(`invoking self for ${event._genesis} in ${event._start} @ ${Date.now()}`)
         }
-        return func.exec(event, invocationType)
+        return func.invoke(event, invocationType)
           .then((result) => {
             if (event._trace) {
               console.log(`invoke self complete for ${event._genesis} in ${event._start} @ ${Date.now()}`)
@@ -96,7 +96,7 @@ const impl = {
         if (script._trace) {
           console.log(`executing load script from ${script._genesis} in ${timeNow} @ ${Date.now()}`)
         }
-        return task.exec(timeNow, script)
+        return task.invoke(timeNow, script)
           .then((result) => {
             if (script._trace) {
               console.log(`execution complete from ${script._genesis} in ${timeNow} @ ${Date.now()}`)

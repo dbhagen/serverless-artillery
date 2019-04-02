@@ -56,7 +56,7 @@ describe('Artillery Acceptance', () => {
     artilleryAcceptance(artilleryTaskMock).execute(testTimeNow, testScript, testSettings)
       .then(() => {
         expect(analysisMock.analyzeAcceptance).to.have.been.called.once
-        expect(analysisMock.analyzeAcceptance).to.have.been.called.with.exactly(testResults)
+        expect(analysisMock.analyzeAcceptance).to.have.been.called.with.exactly(testTimeNow, testScriptSampling, testSettings, testResults)
       })
   )
 

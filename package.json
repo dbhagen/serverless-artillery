@@ -12,7 +12,7 @@
     "light": "./node_modules/.bin/nyc ./node_modules/.bin/_mocha -r aws-sdk \"./tests/**/!(serverless-artillery|npm).spec.js\"",
     "integration": "./node_modules/.bin/_mocha --timeout=1200000 ./tests/integration/index",
     "integration:upgrade": "./node_modules/.bin/_mocha --timeout 90000 ./tests/integration/versioning/upgrade.js",
-    "coverage": "./node_modules/.bin/nyc report --reporter=text-lcov | coveralls",
+    "coverage-report": "./node_modules/.bin/nyc report --reporter=lcov",
     "lint": "./node_modules/.bin/eslint . bin/serverless-artillery",
     "fix": "./node_modules/.bin/eslint --fix . bin/serverless-artillery",
     "postinstall": "node ./postinstall.js",
@@ -85,7 +85,8 @@
       "**/lib/serverless-fx.js",
       "postinstall.js",
       "tests",
-      "test.js"
+      "test.js",
+      "**/assets"
     ],
     "reporter": [
       "lcov",
