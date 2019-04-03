@@ -9,9 +9,6 @@ script:
         rampTo: 5
       - duration: 30
         arrivalRate: 5
-      - duration: 30
-        arrivalRate: 5
-        rampTo: 1
   scenarios:
     - flow:
       - get:
@@ -25,11 +22,7 @@ expectations:
     to: 60
     min: 130
     max: 150
-  - from: 60
-    to: 90
-    min: 80
-    max: 115
   - from: 0
     to: 60
-    min: 315
-    max: 335
+    min: 240
+    max: 260

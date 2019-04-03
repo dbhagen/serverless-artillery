@@ -7,9 +7,6 @@ script:
         rampTo: 10
       - duration: 10
         arrivalRate: 10
-      - duration: 10
-        arrivalRate: 10
-        rampTo: 1
   scenarios:
     - flow:
       - get:
@@ -23,7 +20,3 @@ expectations:
     to: 20
     min: 90
     max: 110
-  - from: 20
-    to: 30
-    min: 90
-    max: 130
