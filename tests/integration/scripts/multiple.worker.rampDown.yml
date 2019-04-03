@@ -5,11 +5,6 @@ script:
     target: 'https://example.com'
     phases:
       - duration: 30
-        arrivalRate: 1
-        rampTo: 15
-      - duration: 30
-        arrivalRate: 15
-      - duration: 30
         arrivalRate: 15
         rampTo: 1
   scenarios:
@@ -19,13 +14,5 @@ script:
 expectations:
   - from: 0
     to: 30
-    min: 240
-    max: 310
-  - from: 30
-    to: 60
-    min: 385
-    max: 460
-  - from: 60
-    to: 90
-    min: 240
-    max: 310
+    min: 220
+    max: 250

@@ -15,6 +15,7 @@ const alertMock = {}
 
 const artilleryMonitoring = proxyquire(
   '../../../lib/lambda/artillery-monitoring.js', {
+    './alert.js': alertMock,
     './sampling.js': samplingMock,
     './planning.js': planningMock,
     './analysis.js': analysisMock,
@@ -25,7 +26,7 @@ describe('Artillery Monitoring', () => {
   const testScript = { name: 'test-monitoring-script' }
   const testScriptSampling = { name: 'test-monitoring-script-sampling' }
   const testPlans = []
-  const testSettings = { prop: 'value', alert: alertMock }
+  const testSettings = { prop: 'value' }
   const testResults = { errors: 0 }
 
   beforeEach(() => {
@@ -58,7 +59,7 @@ describe('Artillery Monitoring', () => {
     artilleryMonitoring(artilleryTaskMock).execute(testTimeNow, testScript, testSettings)
       .then(() => {
         expect(analysisMock.analyzeMonitoring).to.have.been.called.once
-        expect(analysisMock.analyzeMonitoring).to.have.been.called.with.exactly(testResults)
+        expect(analysisMock.analyzeMonitoring).to.have.been.called.with.exactly(testTimeNow, testScript, testSettings, testResults)
       })
   )
 
