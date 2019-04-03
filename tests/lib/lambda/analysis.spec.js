@@ -9,7 +9,6 @@ const analysis = require(path.join('..', '..', '..', 'lib', 'lambda', 'analysis.
 describe('Results analysis', () => {
   const testTimeNow = 111111111111111
   const testScript = { name: 'test-script', _genesis: 22222222222222 }
-  const testPlans = []
   const testSettings = { prop: 'value' }
   const testResultsFailing = {
     reports: [

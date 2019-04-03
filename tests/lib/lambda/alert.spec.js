@@ -26,7 +26,7 @@ describe('Alerting', () => {
         reports: [
           {
             errors: {
-              404: sampling.defaults.monitoring.DefaultErrorBudget + 1,
+              404: sampling.defaults.monitoring.errorBudget + 1,
             },
             latencies: ['stuff', 'we', 'don\'t', 'want'],
           },

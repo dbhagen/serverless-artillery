@@ -1,18 +1,15 @@
 /* eslint-disable no-underscore-dangle */
 
 const chai = require('chai')
+const spies = require('chai-spies')
 const path = require('path')
 const sinon = require('sinon')
-const sinonChai = require('sinon-chai')
 
-chai.use(sinonChai)
+chai.use(spies)
 
+const sandbox = chai.spy.sandbox()
 const { expect } = chai
 
-// // eslint-disable-next-line import/no-dynamic-require
-// const func = require(path.join('..', '..', '..', 'lib', 'lambda', 'func.js'))
-// // eslint-disable-next-line import/no-dynamic-require
-// const task = require(path.join('..', '..', '..', 'lib', 'lambda', 'task.js'))
 // eslint-disable-next-line import/no-dynamic-require
 const settings = require(path.join('..', '..', '..', 'lib', 'lambda', 'platform-settings.js'))
 // eslint-disable-next-line import/no-dynamic-require
@@ -27,7 +24,6 @@ let expected
 let defaultSettings
 
 const runOnceSampling = sampling.defaultSampling({}, {})
-// runOnceSettings.task = { sampling: task.def.defaultSettings(task.def.acceptance) }
 
 const validScript = () => ({
   config: {
@@ -1200,40 +1196,38 @@ describe('./lib/lambda/taskPlan.js', () => {
       // explicitly not stubbing scriptDurationInSeconds and scriptRequestsPerSecond
       let chunk
       let remainder
-      let splitScriptByDurationInSecondsAndScheduleStub
-      let splitScriptByRequestsPerSecondAndScheduleStub
+
       beforeEach(() => {
         script = validScript()
         chunk = validScript()
         remainder = validScript()
-        splitScriptByDurationInSecondsAndScheduleStub = sinon.stub(planning, 'splitScriptByDurationInSecondsAndSchedule').returns({ chunk, remainder })
-        splitScriptByRequestsPerSecondAndScheduleStub = sinon.stub(planning, 'splitScriptByRequestsPerSecondAndSchedule').returns([chunk, remainder])
+        sandbox.on(planning, 'splitScriptByDurationInSecondsAndSchedule', () => ({ chunk, remainder }))
+        sandbox.on(planning, 'splitScriptByRequestsPerSecondAndSchedule', () => ([chunk, remainder]))
       })
-      afterEach(() => {
-        splitScriptByDurationInSecondsAndScheduleStub.restore()
-        splitScriptByRequestsPerSecondAndScheduleStub.restore()
-      })
+
+      afterEach(() => sandbox.restore())
+
       it('returns the given script in an array if that script is within limits', () => {
         result = planning.planPerformance(1, script, defaultSettings)
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.not.have.been.called
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.not.have.been.called
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.not.have.been.called
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.not.have.been.called
         expect(result.length).to.equal(1)
         expect(result[0]).to.equal(script)
       })
       it('splits a script with a duration that is greater than the given limits', () => {
         script.config.phases[0].duration = defaultSettings.maxChunkDurationInSeconds + 1
         result = planning.planPerformance(1, script, defaultSettings)
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.have.been.calledOnce
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.have.been.calledWithExactly(1, script, defaultSettings)
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.not.have.been.called
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.have.been.called.once
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.have.been.called.with.exactly(1, script, defaultSettings)
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.not.have.been.called
         expect(result.length).to.equal(2)
       })
       it('splits a script with a requests per second that are greater than the given limits', () => {
         script.config.phases[0].arrivalRate = defaultSettings.maxChunkRequestsPerSecond + 1
         result = planning.planPerformance(1, script, defaultSettings)
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.not.have.been.called
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.have.been.calledOnce
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.have.been.calledWithExactly(1, script, defaultSettings)
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.not.have.been.called
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.have.been.called.once
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.have.been.called.with.exactly(1, script, defaultSettings)
         expect(result.length).to.equal(2)
       })
       it('splits a script with a both duration and requests per second that are greater than the given limits, in trace mode', () => {
@@ -1245,10 +1239,10 @@ describe('./lib/lambda/taskPlan.js', () => {
         remainder.config.phases[0].duration = 1
         remainder.config.phases[0].arrivalRate = defaultSettings.maxChunkRequestsPerSecond + 1
         result = planning.planPerformance(1, script, defaultSettings)
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.have.been.calledOnce
-        expect(splitScriptByDurationInSecondsAndScheduleStub).to.have.been.calledWithExactly(1, script, defaultSettings)
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.have.been.calledOnce
-        expect(splitScriptByRequestsPerSecondAndScheduleStub).to.have.been.calledWithExactly(1, chunk, defaultSettings)
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.have.been.called.once
+        expect(planning.splitScriptByDurationInSecondsAndSchedule).to.have.been.called.with.exactly(1, script, defaultSettings)
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.have.been.called.once
+        expect(planning.splitScriptByRequestsPerSecondAndSchedule).to.have.been.called.with.exactly(1, chunk, defaultSettings)
         expect(result.length).to.equal(3)
       })
     })
@@ -1270,65 +1264,6 @@ describe('./lib/lambda/taskPlan.js', () => {
       })
     })
 
-    // describe('#planTask', () => {
-    //   let planSamplesStub
-    //   let planPerformanceStub
-    //   beforeEach(() => {
-    //     planSamplesStub = sinon.stub(planning, 'planSamples').returns()
-    //     planPerformanceStub = sinon.stub(planning, 'planPerformance').returns()
-    //   })
-    //   afterEach(() => {
-    //     planSamplesStub.restore()
-    //     planPerformanceStub.restore()
-    //   })
-    //   it('detects the lack of mode and calls planPerformance', () => {
-    //     script = {}
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.not.have.been.called
-    //     expect(planPerformanceStub).to.have.been.calledOnce
-    //   })
-    //   it(`detects mode "${task.def.modes.PERF}" and calls planPerformance`, () => {
-    //     script = { mode: task.def.modes.PERF }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.not.have.been.called
-    //     expect(planPerformanceStub).to.have.been.calledOnce
-    //   })
-    //   it(`detects mode "${task.def.modes.PERFORMANCE}" and calls planPerformance`, () => {
-    //     script = { mode: task.def.modes.PERFORMANCE }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.not.have.been.called
-    //     expect(planPerformanceStub).to.have.been.calledOnce
-    //   })
-    //   it(`detects mode "${task.def.modes.ACC}" and calls planSamples with sampleWithAcceptanceDefaults`, () => {
-    //     script = { mode: task.def.modes.ACC }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.have.been.calledOnce
-    //     expect(planSamplesStub.args[0][2]).to.equal(defaultSettings)
-    //     expect(planPerformanceStub).to.not.have.been.called
-    //   })
-    //   it(`detects mode "${task.def.modes.ACCEPTANCE}" and calls planSamples with sampleWithAcceptanceDefaults`, () => {
-    //     script = { mode: task.def.modes.ACCEPTANCE }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.have.been.calledOnce
-    //     expect(planSamplesStub.args[0][2]).to.equal(defaultSettings)
-    //     expect(planPerformanceStub).to.not.have.been.called
-    //   })
-    //   it(`detects mode "${task.def.modes.MON}" and calls planSamples with sampleWithMonitoringDefaults`, () => {
-    //     script = { mode: task.def.modes.MON }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.have.been.calledOnce
-    //     expect(planSamplesStub.args[0][2]).to.equal(defaultSettings)
-    //     expect(planPerformanceStub).to.not.have.been.called
-    //   })
-    //   it(`detects mode "${task.def.modes.MONITORING}" and calls planSamples with sampleWithMonitoringDefaults`, () => {
-    //     script = { mode: task.def.modes.MONITORING }
-    //     planning.planTask(1, script, defaultSettings)
-    //     expect(planSamplesStub).to.have.been.calledOnce
-    //     expect(planSamplesStub.args[0][2]).to.equal(defaultSettings)
-    //     expect(planPerformanceStub).to.not.have.been.called
-    //   })
-    // })
-
     describe('#whole script planning tests', () => {
       it('correctly calculates a large ramp down', () => {
         script = { config: { phases: [{ duration: 900, arrivalRate: 200, rampTo: 1 }] } }
@@ -1344,7 +1279,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 111, arrivalRate: 25, rampTo: 1 }, { pause: 9 }] }, _genesis: 0, _start: 15000 },
         ]
         // Split #1
-        result = planning.planTask(0, script, defaultSettings)
+        result = planning.planPerformance(0, script, defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 660, arrivalRate: 147, rampTo: 1 }] }, _genesis: 0, _start: 255000 },
@@ -1357,7 +1292,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 106, arrivalRate: 23, rampTo: 1 }, { pause: 14 }] }, _genesis: 0, _start: 135000 },
         ]
         // Split #2
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 540, arrivalRate: 120, rampTo: 1 }] }, _genesis: 0, _start: 375000 },
@@ -1369,7 +1304,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 98, arrivalRate: 22, rampTo: 1 }, { pause: 22 }] }, _genesis: 0, _start: 255000 },
         ]
         // Split #3
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 420, arrivalRate: 94, rampTo: 1 }] }, _genesis: 0, _start: 495000 },
@@ -1380,7 +1315,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 92, arrivalRate: 20, rampTo: 1 }, { pause: 28 }] }, _genesis: 0, _start: 375000 },
         ]
         // Split #4
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 300, arrivalRate: 67, rampTo: 1 }] }, _genesis: 0, _start: 615000 },
@@ -1390,7 +1325,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 84, arrivalRate: 19, rampTo: 1 }, { pause: 36 }] }, _genesis: 0, _start: 495000 },
         ]
         // Split #5
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 180, arrivalRate: 41, rampTo: 1 }] }, _genesis: 0, _start: 735000 },
@@ -1399,7 +1334,7 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 78, arrivalRate: 17, rampTo: 1 }, { pause: 42 }] }, _genesis: 0, _start: 615000 },
         ]
         // Split #6
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 60, arrivalRate: 14, rampTo: 1 }] }, _genesis: 0, _start: 855000 },
@@ -1407,13 +1342,13 @@ describe('./lib/lambda/taskPlan.js', () => {
           { config: { phases: [{ duration: 71, arrivalRate: 16, rampTo: 1 }, { pause: 49 }] }, _genesis: 0, _start: 735000 },
         ]
         // Split #7
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
         expected = [
           { config: { phases: [{ duration: 60, arrivalRate: 14, rampTo: 1 }] }, _genesis: 0, _start: 855000 },
         ]
         // Split #8
-        result = planning.planTask(result[1]._start, result[0], defaultSettings)
+        result = planning.planPerformance(result[1]._start, result[0], defaultSettings)
         expect(result).to.be.eql(expected)
       })
     })

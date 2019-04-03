@@ -26,7 +26,8 @@ const awsLambdaMock = {
   }),
 }
 const awsMock = {
-  Lambda: function () { // eslint-disable-line object-shorthand
+  // Declaring Lambda mock as a class
+  Lambda: function () { // eslint-disable-line object-shorthand, func-names
     this.invoke = awsLambdaMock.invoke
   },
 }
@@ -129,7 +130,5 @@ describe('Artillery Task', () => {
       })
   })
 
-  afterEach(() => {
-    sandbox.restore()
-  })
+  afterEach(() => sandbox.restore())
 })

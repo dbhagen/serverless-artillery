@@ -41,7 +41,7 @@ let Payload = '{}'
 class AwsInvoke {
   log() {} // eslint-disable-line class-methods-use-this
 }
-let slsFakeInit = () => Promise.resolve()
+const slsFakeInit = () => Promise.resolve()
 class ServerlessFake {
   constructor() {
     this.version = '1.0.3'

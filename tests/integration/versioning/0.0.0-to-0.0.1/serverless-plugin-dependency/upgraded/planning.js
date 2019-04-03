@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
-const def = require('./taskDef')
+const modes = require('./modes.js')
 
-const impl = {
+const planning = {
   // ###############
   // ## DURATIONS ##
   // ###############
@@ -32,7 +32,7 @@ const impl = {
     let i
     let phaseDurationInSeconds
     for (i = 0; i < script.config.phases.length; i++) {
-      phaseDurationInSeconds = impl.phaseDurationInSeconds(script.config.phases[i])
+      phaseDurationInSeconds = planning.phaseDurationInSeconds(script.config.phases[i])
       if (phaseDurationInSeconds < 0) {
         ret = -1 * i
         break
@@ -100,9 +100,9 @@ const impl = {
     }
     while (remainingDurationInSeconds > 0 && ret.remainder.config.phases.length) {
       phase = ret.remainder.config.phases.shift()
-      phaseDurationInSeconds = impl.phaseDurationInSeconds(phase)
+      phaseDurationInSeconds = planning.phaseDurationInSeconds(phase)
       if (phaseDurationInSeconds > remainingDurationInSeconds) { // split phase
-        phaseParts = impl.splitPhaseByDurationInSeconds(phase, remainingDurationInSeconds)
+        phaseParts = planning.splitPhaseByDurationInSeconds(phase, remainingDurationInSeconds)
         ret.chunk.config.phases.push(phaseParts.chunk)
         ret.remainder.config.phases.unshift(phaseParts.remainder)
         remainingDurationInSeconds = 0
@@ -157,7 +157,7 @@ const impl = {
     let i
     let phaseRps
     for (i = 0; i < script.config.phases.length; i++) {
-      phaseRps = impl.phaseRequestsPerSecond(script.config.phases[i])
+      phaseRps = planning.phaseRequestsPerSecond(script.config.phases[i])
       if (phaseRps < 0) {
         ret = -1 * i
         break
@@ -217,9 +217,9 @@ const impl = {
    * @returns {{x: number, y: number}} The intersection point of the phase's ramp with the chunkSize limit
    */
   intersection: (phase, chunkSize) => {
-    const ramp = impl.abc({ x: 0, y: phase.arrivalRate }, { x: phase.duration, y: phase.rampTo })
-    const limit = impl.abc({ x: 0, y: chunkSize }, { x: phase.duration, y: chunkSize })
-    return impl.intersect(ramp, limit)
+    const ramp = planning.abc({ x: 0, y: phase.arrivalRate }, { x: phase.duration, y: phase.rampTo })
+    const limit = planning.abc({ x: 0, y: chunkSize }, { x: phase.duration, y: chunkSize })
+    return planning.intersect(ramp, limit)
   },
   /**
    * Overwrite the given field with the given value in the given phase.  If the value is null, then if the attribute
@@ -247,11 +247,11 @@ const impl = {
    */
   copyOverwritePush: (arr, phase, arrivalCount, arrivalRate, rampTo, duration, pause) => {
     const newPhase = JSON.parse(JSON.stringify(phase))
-    impl.overWrite(newPhase, 'arrivalCount', arrivalCount)
-    impl.overWrite(newPhase, 'arrivalRate', arrivalRate)
-    impl.overWrite(newPhase, 'rampTo', rampTo)
-    impl.overWrite(newPhase, 'duration', duration)
-    impl.overWrite(newPhase, 'pause', pause)
+    planning.overWrite(newPhase, 'arrivalCount', arrivalCount)
+    planning.overWrite(newPhase, 'arrivalRate', arrivalRate)
+    planning.overWrite(newPhase, 'rampTo', rampTo)
+    planning.overWrite(newPhase, 'duration', duration)
+    planning.overWrite(newPhase, 'pause', pause)
     arr.push(newPhase)
   },
   /**
@@ -262,7 +262,7 @@ const impl = {
    * @param duration The duration of the new phase (see artillery.io)
    */
   addArrivalCount: (arr, phase, arrivalCount, duration) => {
-    impl.copyOverwritePush(arr, phase, arrivalCount, null, null, duration, null)
+    planning.copyOverwritePush(arr, phase, arrivalCount, null, null, duration, null)
   },
   /**
    * Add an arrivalRate phase that is an altered copy of the given phase to the given phase array
@@ -272,7 +272,7 @@ const impl = {
    * @param duration The duration of the new phase (see artillery.io)
    */
   addArrivalRate: (arr, phase, arrivalRate, duration) => {
-    impl.copyOverwritePush(arr, phase, null, arrivalRate, null, duration, null)
+    planning.copyOverwritePush(arr, phase, null, arrivalRate, null, duration, null)
   },
   /**
    * Add an arrivalRate phase that is an altered copy of the given phase to the given phase array
@@ -283,7 +283,7 @@ const impl = {
    * @param duration The duration of the new phase (see artillery.io)
    */
   addRamp: (arr, phase, arrivalRate, rampTo, duration) => {
-    impl.copyOverwritePush(arr, phase, null, arrivalRate > 0 ? arrivalRate : 1, rampTo, duration, null)
+    planning.copyOverwritePush(arr, phase, null, arrivalRate > 0 ? arrivalRate : 1, rampTo, duration, null)
   },
   /**
    * Add an arrivalRate phase that is an altered copy of the given phase to the given phase array
@@ -292,7 +292,7 @@ const impl = {
    * @param pause The pause of the new phase (see artillery.io)
    */
   addPause: (arr, phase, pause) => {
-    impl.copyOverwritePush(arr, phase, null, null, null, null, pause)
+    planning.copyOverwritePush(arr, phase, null, null, null, null, pause)
   },
   /**
    * Split the requests per second of a phase to be no more than the given chunkSize.
@@ -320,12 +320,12 @@ const impl = {
       min = Math.min(phase.arrivalRate, phase.rampTo)
       if (max <= chunkSize) {
         // the highest portion of the ramp does not exceed the chunkSize, consume the phase and create a pause remainder
-        impl.addRamp(ret.chunk, phase, phase.arrivalRate, phase.rampTo, phase.duration)
-        impl.addPause(ret.remainder, phase, phase.duration)
+        planning.addRamp(ret.chunk, phase, phase.arrivalRate, phase.rampTo, phase.duration)
+        planning.addPause(ret.remainder, phase, phase.duration)
       } else if (min >= chunkSize) {
         // the least portion of the ramp exceeds chunkSize, produce a constant arrival and reduce the ramp by chunkSize
-        impl.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration)
-        impl.addRamp(ret.remainder, phase, phase.arrivalRate - chunkSize, phase.rampTo - chunkSize, phase.duration)
+        planning.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration)
+        planning.addRamp(ret.remainder, phase, phase.arrivalRate - chunkSize, phase.rampTo - chunkSize, phase.duration)
       } else {
         // otherwise, the chunkSize intersects the phase's request per second trajectory, differentially split across
         // the intersection
@@ -339,41 +339,41 @@ const impl = {
         //  0 _|____________       0 _|____________       a  = an constant arrival phase
         //     |                      |                   p  = a pause phase
         //     0      x    d         0      x    d        *  = a starting, ending, or intermediate RPS
-        intersection = impl.intersection(phase, chunkSize)
+        intersection = planning.intersection(phase, chunkSize)
         if (phase.arrivalRate < phase.rampTo) {
-          impl.addRamp(ret.chunk, phase, phase.arrivalRate, chunkSize, intersection.x)
-          impl.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration - intersection.x)
-          impl.addPause(ret.remainder, phase, intersection.x)
-          impl.addRamp(ret.remainder, phase, 1, phase.rampTo - chunkSize, phase.duration - intersection.x)
+          planning.addRamp(ret.chunk, phase, phase.arrivalRate, chunkSize, intersection.x)
+          planning.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration - intersection.x)
+          planning.addPause(ret.remainder, phase, intersection.x)
+          planning.addRamp(ret.remainder, phase, 1, phase.rampTo - chunkSize, phase.duration - intersection.x)
         } else {
-          impl.addArrivalRate(ret.chunk, phase, chunkSize, intersection.x)
-          impl.addRamp(ret.chunk, phase, chunkSize, phase.rampTo, phase.duration - intersection.x)
-          impl.addRamp(ret.remainder, phase, phase.arrivalRate - chunkSize, 1, intersection.x)
-          impl.addPause(ret.remainder, phase, phase.duration - intersection.x)
+          planning.addArrivalRate(ret.chunk, phase, chunkSize, intersection.x)
+          planning.addRamp(ret.chunk, phase, chunkSize, phase.rampTo, phase.duration - intersection.x)
+          planning.addRamp(ret.remainder, phase, phase.arrivalRate - chunkSize, 1, intersection.x)
+          planning.addPause(ret.remainder, phase, phase.duration - intersection.x)
         }
       }
     } else if ('arrivalRate' in phase) { // constant rate phase
       if (phase.arrivalRate > chunkSize) { // subtract the chunkSize if greater than that
-        impl.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration)
-        impl.addArrivalRate(ret.remainder, phase, phase.arrivalRate - chunkSize, phase.duration)
+        planning.addArrivalRate(ret.chunk, phase, chunkSize, phase.duration)
+        planning.addArrivalRate(ret.remainder, phase, phase.arrivalRate - chunkSize, phase.duration)
       } else { // Otherwise, include the entire arrival and create a pause for the remainder
-        impl.addArrivalRate(ret.chunk, phase, phase.arrivalRate, phase.duration)
-        impl.addPause(ret.remainder, phase, phase.duration)
+        planning.addArrivalRate(ret.chunk, phase, phase.arrivalRate, phase.duration)
+        planning.addPause(ret.remainder, phase, phase.duration)
       }
     } else if ('arrivalCount' in phase && 'duration' in phase) {
       // constant rate stated as total scenarios delivered over a duration
       rps = phase.arrivalCount / phase.duration
       if (rps >= chunkSize) {
         arrivalCount = Math.floor(chunkSize * phase.duration)
-        impl.addArrivalCount(ret.chunk, phase, arrivalCount, phase.duration)
-        impl.addArrivalCount(ret.remainder, phase, phase.arrivalCount - arrivalCount, phase.duration)
+        planning.addArrivalCount(ret.chunk, phase, arrivalCount, phase.duration)
+        planning.addArrivalCount(ret.remainder, phase, phase.arrivalCount - arrivalCount, phase.duration)
       } else {
-        impl.addArrivalCount(ret.chunk, phase, phase.arrivalCount, phase.duration)
-        impl.addPause(ret.remainder, phase, phase.duration)
+        planning.addArrivalCount(ret.chunk, phase, phase.arrivalCount, phase.duration)
+        planning.addPause(ret.remainder, phase, phase.duration)
       }
     } else if ('pause' in phase) {
-      impl.addPause(ret.chunk, phase, phase.pause)
-      impl.addPause(ret.remainder, phase, phase.pause)
+      planning.addPause(ret.chunk, phase, phase.pause)
+      planning.addPause(ret.remainder, phase, phase.pause)
     }
     return ret
   },
@@ -397,7 +397,7 @@ const impl = {
     ret.chunk.config.phases = []
     ret.remainder.config.phases = []
     for (i = 0; i < script.config.phases.length; i++) {
-      phaseParts = impl.splitPhaseByRequestsPerSecond(script.config.phases[i], chunkSize)
+      phaseParts = planning.splitPhaseByRequestsPerSecond(script.config.phases[i], chunkSize)
       for (j = 0; j < phaseParts.chunk.length; j++) {
         ret.chunk.config.phases.push(phaseParts.chunk[j])
       }
@@ -420,7 +420,7 @@ const impl = {
     if (script._trace) {
       console.log(`splitting script by duration from ${script._genesis} in ${timeNow} @ ${Date.now()}`)
     }
-    const parts = impl.splitScriptByDurationInSeconds(script, settings.maxChunkDurationInSeconds)
+    const parts = planning.splitScriptByDurationInSeconds(script, settings.maxChunkDurationInSeconds)
     // SCHEDULE
     if (!parts.chunk._start) {
       parts.chunk._start = timeNow + settings.timeBufferInMilliseconds
@@ -454,10 +454,10 @@ const impl = {
       script._start = timeNow + settings.timeBufferInMilliseconds // eslint-disable-line no-param-reassign
     }
     do {
-      const parts = impl.splitScriptByRequestsPerSecond(script, settings.maxChunkRequestsPerSecond)
+      const parts = planning.splitScriptByRequestsPerSecond(script, settings.maxChunkRequestsPerSecond)
       plan.push(parts.chunk)
       script = parts.remainder
-      scriptRequestsPerSecond = impl.scriptRequestsPerSecond(script) // determine whether we need to continue chunking
+      scriptRequestsPerSecond = planning.scriptRequestsPerSecond(script) // determine whether we need to continue chunking
     } while (scriptRequestsPerSecond > 0)
     if (script._trace) {
       console.log(`immediate chunk split in to ${plan.length - initialLength} chunks, with ${initialLength} future chunk(s) from ${script._genesis} in ${timeNow} @ ${Date.now()}`)
@@ -475,13 +475,13 @@ const impl = {
    * @returns {Array} An array of scripts that each contain a single flow from the original script and specify its
    * execution exactly once.
    */
-  splitScriptByFlow: (script, settings) => {
+  splitScriptByFlow: (script) => {
     let i
     let last = 0
     const scripts = []
     let newScript
     const oldScript = JSON.parse(JSON.stringify(script))
-    oldScript.mode = def.modes.PERF
+    oldScript.mode = modes.PERF
     delete oldScript.config.phases
     for (i = 0; i < oldScript.scenarios.length; i++) { // break each flow into a new script
       // there is a non-standard specification in artillery where you can specify a flow as a series of array entries
@@ -502,7 +502,7 @@ const impl = {
       // for completeness, this logic accounts for that valid (though inadvisable) script format
       if (oldScript.scenarios[i].flow) {
         newScript = JSON.parse(JSON.stringify(oldScript))
-        newScript.config.phases = impl.generateSamplingPhases(settings) // do this for every script so that they don't act in sync and create harmonic effects
+        newScript.config.phases = planning.generateSamplingPhases(script.sampling) // do this for every script so that they don't act in sync and create harmonic effects
         newScript.scenarios = oldScript.scenarios.slice(last, i + 1)
         last = i + 1
         scripts.push(newScript)
@@ -513,23 +513,23 @@ const impl = {
   /**
    * Generate a series of sampling phases with pauses between them according to the given settings
    * @param script The script for which sampling phases are to be generated
-   * @param settings The settings to use in generating phases for the given script
+   * @param sampling The settings to use in generating phases for the given script
    * @returns {Array} The generated sample phases for the given script
    */
-  generateSamplingPhases: (settings) => {
+  generateSamplingPhases: (sampling) => {
     const phases = []
     // Note: rather than generating these times ourselves, we could use the poisson distribution feature but we want an exact number of executions
     // in order to facilitate simple thresholding on the number of successes in a manner that is predictable and legible to users
-    for (let i = 0; i < settings.task.sampling.size; i++) {
+    for (let i = 0; i < sampling.size; i++) {
       // Add a pause (even the first time) so as to avoid walls of requests
       // Math.random => [0, 1]
       // [0, 1] * 2 => [0, 2]
       // [0, 2] * pauseVariance => [0, 2 * pauseVariance]
-      let pause = (Math.random() * 2 * settings.task.sampling.pauseVariance)
+      let pause = (Math.random() * 2 * sampling.pauseVariance)
       // [0, 2 * pauseVariance] - pauseVariance => [-pauseVariance, +pauseVariance]
-      pause -= settings.task.sampling.pauseVariance
+      pause -= sampling.pauseVariance
       // [-pauseVariance, +pauseVariance] + averagePause => [averagePause - pauseVariance, averagePause + pauseVariance]
-      pause += settings.task.sampling.averagePause
+      pause += sampling.averagePause
       phases.push({ pause })
       phases.push({ duration: 1, arrivalRate: 1 }) // exactly once (settings.task.sampling.size times)
     }
@@ -541,74 +541,60 @@ const impl = {
   /**
    * Create an execution plan for a performance mode script
    * @param timeNow The time identity to use in logging activity
-   * @param event The script to split and schedule the chunks of
+   * @param script The script to split and schedule the chunks of
    * @param settings The settings to use for splitting the script
    * @returns {ScriptChunk[]} The script chunks obtains from splitting the script (if appropriate) by duration and requests per second
    */
-  planPerformance: (timeNow, event, settings) => {
+  planPerformance: (timeNow, script, settings) => {
     const plan = []
-    let script = event
+    let updatedScript = planning.ensureScriptGenesis(script, timeNow)
+
     // ## Duration ##
-    const scriptDurationInSeconds = impl.scriptDurationInSeconds(script)
+    const scriptDurationInSeconds = planning.scriptDurationInSeconds(updatedScript)
+
     // if there is more script to execute than we're able to complete in a single execution, chomp off the initial executable
     // duration of that script as the current executable of our plan.
     if (scriptDurationInSeconds > settings.maxChunkDurationInSeconds) {
-      const parts = impl.splitScriptByDurationInSecondsAndSchedule(timeNow, script, settings)
-      script = parts.chunk
+      const parts = planning.splitScriptByDurationInSecondsAndSchedule(timeNow, updatedScript, settings)
+      updatedScript = parts.chunk
       plan.push(parts.remainder)
     }
+
     // ## Requests Per Second ##
-    const scriptRequestsPerSecond = impl.scriptRequestsPerSecond(script)
+    const scriptRequestsPerSecond = planning.scriptRequestsPerSecond(updatedScript)
+
     // if the current script can be executed in a single run add it to the plan, otherwise, remove chunks that can be,
     // adding them to the plan until no more script remains
     if (scriptRequestsPerSecond <= settings.maxChunkRequestsPerSecond) {
-      plan.push(script)
+      plan.push(updatedScript)
     } else {
-      const parts = impl.splitScriptByRequestsPerSecondAndSchedule(timeNow, script, settings)
+      const parts = planning.splitScriptByRequestsPerSecondAndSchedule(timeNow, updatedScript, settings)
       plan.push.apply(plan, parts) // eslint-disable-line prefer-spread
     }
+
     return plan
   },
   /**
    * Plan for executing a set of samples for each unique flow in the given script where each sample
    * executes its unique flow once
    * @param timeNow The time at which the event was received for this execution
-   * @param event The Artillery (http://artillery.io) script to split into acceptance tests
-   * @param generatePhases A function that appends samples to generated script array
+   * @param script The Artillery (http://artillery.io) script to split into acceptance tests
+   * @param settings Execution environment and script constraints
    * @returns {*|Array} The scripts to execute as part of this sample plan
    */
-  planSamples: (timeNow, event, settings) => {
-    const script = event
-    script._start = timeNow // immediate execution
-    script._invokeType = 'RequestResponse' // we care about the results (and will record/analyze them)
-    return impl.splitScriptByFlow(script, settings)
+  planSamples: (timeNow, script, settings) => {
+    const updatedScript = planning.ensureScriptGenesis(script, timeNow)
+
+    updatedScript._start = timeNow // immediate execution
+    updatedScript._invokeType = 'RequestResponse' // we care about the results (and will record/analyze them)
+
+    return planning.splitScriptByFlow(updatedScript, settings)
   },
-  /**
-   * An expanded artillery script chunk (see https://artillery.io/docs/)
-   * @typedef {Object} ScriptChunk
-   * @property number _start The time at which the script is to be executed.
-   */
-  /**
-   * Plan the execution of the given script.
-   * @param timeNow The time that the current execution started at, used as an identity for tracing and scheduling purposes.
-   * @param script The artillery script to plan the execution of, using the given settings.
-   * @param settings The settings to use for planning the given script's execution.
-   * @returns {ScriptChunk[]} An array of script chunks, each of which is a valid artillery script with a start time annotation.
-   */
-  planTask: (timeNow, script, settings) => {
-    if (!('_genesis' in script)) {
-      script._genesis = timeNow // eslint-disable-line no-param-reassign
-    }
-    if (def.isSamplingScript(script)) {
-      return impl.planSamples(timeNow, script, settings)
-    } else {
-      return impl.planPerformance(timeNow, script, settings)
-    }
-  },
+
+  ensureScriptGenesis: (script, timeNow) =>
+    Object.assign(script, {
+      _genesis: script._genesis === undefined ? timeNow : script._genesis,
+    }),
 }
 
-module.exports = impl.planTask
-
-/* test-code */
-module.exports.impl = impl
-/* end-test-code */
+module.exports = planning
