@@ -7,8 +7,6 @@ const artilleryAcceptance = artilleryTask => ({
     const acceptanceScript = sampling.applyAcceptanceSamplingToScript(script, settings)
 
     const plans = planning.planSamples(timeNow, acceptanceScript, settings)
-    // TODO: Scripts for sampling are split by flow
-    // TODO: Determine how to guarantee return of results
 
     return artilleryTask
       .executeAll(acceptanceScript, settings, plans, timeNow)

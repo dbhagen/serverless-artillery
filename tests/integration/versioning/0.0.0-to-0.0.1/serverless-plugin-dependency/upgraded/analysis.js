@@ -3,7 +3,7 @@ const sampling = require('./sampling.js')
 
 const analysis = {
   getErrorBudget: (script, defaultErrorBudget) => {
-    if (script && script.sampling && script.sampling.errorBudget) {
+    if (script && script.sampling && script.sampling.errorBudget !== undefined) {
       return script.sampling.errorBudget
     } else if (defaultErrorBudget !== undefined) {
       return defaultErrorBudget
@@ -20,7 +20,14 @@ const analysis = {
    * @param defaultErrorBudget Maximum number of errors allowed
    */
   analyzeSamples: (script, report, defaultErrorBudget) => {
-    const { reports } = report
+    let reports
+
+    if (report.reports) {
+      reports = report.reports // eslint-disable-line prefer-destructuring
+    } else {
+      reports = [report]
+    }
+
     const totals = {
       scenariosCreated: 0,
       scenariosCompleted: 0,
@@ -62,16 +69,16 @@ const analysis = {
       totals,
     }
 
-    if (finalReport.errors && totalErrors > errorBudget) {
+    if (totalErrors > errorBudget) {
       finalReport.errorMessage = `${
         modes.getModeForDisplay(script)
-      } scenario failures: ${
-        totalErrors
-      }/${
+      } failure: scenarios run: ${
         totals.scenariosCreated
-      } exceeded budget of ${
+      }, total errors: ${
+        totalErrors
+      }, error budget: ${
         errorBudget
-      } errors`
+      }`
     }
 
     return finalReport

@@ -25,6 +25,7 @@ describe('upgrade plugin for version 0.0.1', () => {
 
   it('includes all asset files in the manifest', () => {
     expect(upgrade().fileManifest()).to.deep.equal([
+      '.slsart',
       'alert.js',
       'analysis.js',
       'artillery-acceptance.js',

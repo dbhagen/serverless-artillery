@@ -64,7 +64,7 @@ describe('Artillery Monitoring', () => {
   )
 
   it('alerts in the case of errors', () => {
-    testResults.errors = 'yes'
+    testResults.errorMessage = 'oh noes!'
 
     return artilleryMonitoring(artilleryTaskMock).execute(testTimeNow, testScript, testSettings)
       .then(() => {

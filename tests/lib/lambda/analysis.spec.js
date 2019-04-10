@@ -110,6 +110,6 @@ describe('Results analysis', () => {
 
   it('adds an errorMessage for failing results', () => {
     const finalReport = analysis.analyzeMonitoring(testTimeNow, testScript, testSettings, testResultsFailing)
-    expect(finalReport.errorMessage).to.equal('performance scenario failures: 7/8 exceeded budget of 4 errors')
+    expect(finalReport.errorMessage).to.equal('performance failure: scenarios run: 8, total errors: 7, error budget: 4')
   })
 })
